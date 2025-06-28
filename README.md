@@ -64,6 +64,10 @@ REDIS_PORT=6379       # Port Redis
 
 ### 3. 🧪 Stratégie de test complète
 
+## Résultats des Tests
+
+- **Résultats** : [Resultats des tests](test_logs/all_tests_output.log)
+
 #### Tests Unitaires (Test de services)
 - **Objectif** : Vérifier le bon fonctionnement des composants individuels
 - **Framework** : Pytest avec pytest-asyncio
