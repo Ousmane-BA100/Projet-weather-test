@@ -72,7 +72,7 @@ REDIS_PORT=6379       # Port Redis
   - Transformation des données
   - Gestion des erreurs
 - **Exemple** : [tests/test_services/test_weather_service.py](cci:7://file:///c:/Users/bousm/Downloads/Projet-Final-Test/tests/test_services/test_weather_service.py:0:0-0:0)
-- **Résultats** : [Voir le log des tests](tests/test_services/test_output.log)
+- **Résultats** : [Voir le log des tests](test_logs/test_services_output.log)
 
 #### Tests d'Intégration (Test de intégration)
 - **Objectif** : Vérifier les interactions entre les composants
@@ -81,7 +81,7 @@ REDIS_PORT=6379       # Port Redis
   - Communication entre services
   - Gestion des dépendances externes
 - **Exemple** : [tests/test_integration/test_redis_integration.py](cci:7://file:///c:/Users/bousm/Downloads/Projet-Final-Test/tests/test_integration/test_redis_integration.py:0:0-0:0)
-- **Résultats** : [Voir le log des tests](tests/test_integration/test_output.log)
+- **Résultats** : [Voir le log des tests](test_logs/test_integration_output.log)
 
 #### Tests de Contrat (Test de contrat)
 - **Objectif** : Assurer la cohérence des réponses API
@@ -90,7 +90,7 @@ REDIS_PORT=6379       # Port Redis
   - Types de données
   - Champs obligatoires
 - **Exemple** : [tests/test_contract/test_weather_contract.py](cci:7://file:///c:/Users/bousm/Downloads/Projet-Final-Test/tests/test_contract/test_weather_contract.py:0:0-0:0)
-- **Résultats** : [Voir le log des tests](tests/test_contract/test_output.log)
+- **Résultats** : [Voir le log des tests](test_logs/test_contract_output.log)
 
 #### Tests d'API (Test d'API)
 - **Couverture** :
@@ -99,7 +99,7 @@ REDIS_PORT=6379       # Port Redis
   - Gestion des erreurs
   - Validation des entrées
 - **Exemple** : [tests/test_api/test_weather_endpoints.py](cci:7://file:///c:/Users/bousm/Downloads/Projet-Final-Test/tests/test_api/test_weather_endpoints.py:0:0-0:0)
-- **Résultats** : [Voir le log des tests](tests/test_api/test_output.log)
+- **Résultats** : [Voir le log des tests](test_logs/test_api_output.log)
 
 #### Tests de Performance (Load Testing)
 - **Outil** : Locust
@@ -112,7 +112,7 @@ REDIS_PORT=6379       # Port Redis
   - Temps de réponse moyen
   - Taux d'échec
 - **Exemple** : [tests/test_load/test_weather_load_test.py](cci:7://file:///c:/Users/bousm/Downloads/Projet-Final-Test/tests/test_load/test_weather_load_test.py:0:0-0:0)
-- **Résultats** : [Voir le log des tests](tests/test_load/test_output.log)
+- **Résultats** : [Voir le log des tests](test_load/results)
 
 ![Résultats des tests de charge avec Locust](images/image_locust.png)
 
@@ -121,8 +121,23 @@ REDIS_PORT=6379       # Port Redis
 #### Exemple d'exécution des Tests
 
 ```bash
-# Exécuter les tests dans un conteneur Docker pur générer les fichiers de logs
-docker-compose exec app bash -c "pytest -v tests/test_load/ --asyncio-mode=auto" | tee tests/test_load/test_output.log
+# Tests d'API
+docker-compose exec app sh -c "pytest -v tests/test_api/ > /app/test_logs/test_api_output.log 2>&1"
+
+# Tests de contrat
+docker-compose exec app sh -c "pytest -v tests/test_contract/ > /app/test_logs/test_contract_output.log 2>&1"
+
+# Tests des contrôleurs
+docker-compose exec app sh -c "pytest -v tests/test_controllers/ > /app/test_logs/test_controllers_output.log 2>&1"
+
+# Tests d'intégration
+docker-compose exec app sh -c "pytest -v tests/test_integration/ > /app/test_logs/test_integration_output.log 2>&1"
+
+# Tests des services
+docker-compose exec app sh -c "pytest -v tests/test_services/ > /app/test_logs/test_services_output.log 2>&1"
+
+# Tous les tests
+docker-compose exec app sh -c "pytest -v tests/ > /app/test_logs/all_tests_output.log 2>&1"
 ```
 
 

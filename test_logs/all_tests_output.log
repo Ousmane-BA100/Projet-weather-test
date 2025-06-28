@@ -1,0 +1,19 @@
+============================= test session starts ==============================
+platform linux -- Python 3.9.23, pytest-7.4.2, pluggy-1.6.0 -- /usr/local/bin/python3.9
+cachedir: .pytest_cache
+rootdir: /app
+plugins: asyncio-0.21.1, anyio-3.7.1
+asyncio: mode=strict
+collecting ... collected 9 items
+
+tests/test_api/test_cache_endpoints.py::test_clear_cache PASSED          [ 11%]
+tests/test_api/test_weather_endpoints.py::test_get_weather PASSED        [ 22%]
+tests/test_api/test_weather_endpoints.py::test_get_weather_invalid_city PASSED [ 33%]
+tests/test_contract/test_weather_contract.py::test_weather_response_contract PASSED [ 44%]
+tests/test_controllers/test_weather_controller.py::test_get_weather_success PASSED [ 55%]
+tests/test_controllers/test_weather_controller.py::test_get_weather_not_found PASSED [ 66%]
+tests/test_controllers/test_weather_controller.py::test_get_weather_server_error PASSED [ 77%]
+tests/test_integration/test_redis_integration.py::test_redis_integration PASSED [ 88%]
+tests/test_services/test_weather_service.py::test_get_weather PASSED     [100%]
+
+============================== 9 passed in 1.30s ===============================
