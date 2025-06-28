@@ -1,4 +1,4 @@
-name: Test et Déploiement
+name: Test weather API et Déploiement
 
 on:
   #push:
