@@ -1,0 +1,109 @@
+name: Test et Déploiement
+
+on:
+  #push:
+   # branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKER_IMAGE: weather-api
+  AWS_REGION: eu-west-3  # Ajustez selon votre région AWS
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Installation des dépendances
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+    
+    - name: Exécution des tests
+      env:
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      run: |
+        pytest -v --cov=./ --cov-report=xml
+
+  build-and-deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Configuration AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Installation d'AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+      
+      - name: Construction de l'image Docker
+        run: |
+          docker build -t ${{ env.DOCKER_IMAGE }} .
+      
+      - name: Connexion à Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      
+      - name: Tag et push vers ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: weather-api
+        run: |
+          docker tag ${{ env.DOCKER_IMAGE }}:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      
+      - name: Déploiement sur EC2
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.AWS_EC2_HOST }}
+          USER: ec2-user
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key $USER@$HOST "
+            # Arrêter et supprimer le conteneur existant
+            docker stop ${{ env.DOCKER_IMAGE }} || true
+            docker rm ${{ env.DOCKER_IMAGE }} || true
+            
+            # Se connecter à ECR
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            # Lancer le nouveau conteneur
+            docker run -d \
+              --name ${{ env.DOCKER_IMAGE }} \
+              -p 80:8000 \
+              -e REDIS_HOST=redis \
+              -e OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }} \
+              -e WEATHERAPI_KEY=${{ secrets.WEATHERAPI_KEY }} \
+              --restart unless-stopped \
+              ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          "
